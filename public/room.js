@@ -18,11 +18,11 @@ let cannonDebugRenderer
 let velocityY = 0;
 const gravity = -30;
 
-let box
-let boxBody
+let supply_boxes = [];
+let supply_boxesBodys = [];
 
-let football
-let sphereBody
+let footballs = [];
+let footballsBodys = [];
 
 
 let grenade
@@ -133,27 +133,45 @@ function init() {
      }
     };
 
+    // document.addEventListener('keydown', event => {
+    //     if (event.code === 'KeyE') {
+    //       // Создание луча
+    //       const raycaster = new THREE.Raycaster();
+    //       const direction = new THREE.Vector3();
+    //       camera.getWorldDirection(direction);
+    //       raycaster.set(camera.position, direction);
+    //       raycaster.camera = camera; // Установка свойства camera объекта raycaster
+      
+    //       // Определение точки пересечения луча с физическими объектами
+    //       const objects = scene.children.filter(object => object !== null); // Фильтрация массива scene.children
+    //       const intersects = raycaster.intersectObjects(objects);
+    //       if (intersects.length > 0) {
+    //         const position = intersects[0].point;
+    //         // Создание взрыва в точке пересечения
+    //         explode(position);
+    //       }
+    //     }
+    //   });
+      
     document.addEventListener('keydown', event => {
         if (event.code === 'KeyE') {
           // Создание луча
-          const raycaster = new THREE.Raycaster();
-          const direction = new THREE.Vector3();
-          camera.getWorldDirection(direction);
-          raycaster.set(camera.position, direction);
-          raycaster.camera = camera; // Установка свойства camera объекта raycaster
+          const from = new CANNON.Vec3().copy(camera.position);
+          const to = new CANNON.Vec3();
+          camera.getWorldDirection(to);
+          to.scale(100, to); // Установка длины луча
+          to.vadd(from, to); // Установка конечной точки луча
       
           // Определение точки пересечения луча с физическими объектами
-          const objects = scene.children.filter(object => object !== null); // Фильтрация массива scene.children
-          const intersects = raycaster.intersectObjects(objects);
-          if (intersects.length > 0) {
-            const position = intersects[0].point;
+          const result = new CANNON.RaycastResult();
+          world.raycastClosest(from, to, {}, result);
+          if (result.hasHit) {
+            const position = result.hitPointWorld;
             // Создание взрыва в точке пересечения
             explode(position);
           }
         }
       });
-      
-      
 
 
       // Установка свойства emissive в 0x000000 для всех материалов в сцене
@@ -186,8 +204,8 @@ scene.traverse(object => {
     const loader = new THREE.TextureLoader();
     const texture = loader.load('img/brick.jpg');
     const floorTexture = loader.load('img/wood.jpg');
-    const boxTexture = loader.load('img/box.png');
-    const footballTexture = loader.load('img/basketball.png');
+    
+    
     const explosionTexture = loader.load('img/explosion.png');
     const sky = loader.load('img/sky.png');
     const grass = loader.load('img/grass.png');
@@ -201,14 +219,14 @@ scene.traverse(object => {
     grass.wrapS = THREE.RepeatWrapping;
     grass.wrapT = THREE.RepeatWrapping;
 
-    texture.repeat.set(5, 2); // Повторить текстуру 4 раза по горизонтали и 1 раз по вертикали
+    texture.repeat.set(5, 8); // Повторить текстуру 4 раза по горизонтали и 1 раз по вертикали
     floorTexture.repeat.set(7, 7);
     grass.repeat.set(37, 37);
 
 
 
     // Создание источника света СОЛНЦЕ
-    const light = new THREE.DirectionalLight(0xffffff, 1);
+    const light = new THREE.DirectionalLight(0xffffff, 1.5);
     light.position.set(18, 20, 18);
     light.castShadow = true; // Включение генерации теней для источника света
     // light.shadow.bias = -0.001; // Установка значения shadow.bias
@@ -279,7 +297,7 @@ world.addBody(grassMatBody);
 
     
     // Создание стен
-    const wallGeometry = new THREE.PlaneGeometry(10, 3);
+    const wallGeometry = new THREE.PlaneGeometry(10, 9);
     const wallMaterial = new THREE.MeshPhongMaterial({map: texture});
     
     const wall1 = new THREE.Mesh(wallGeometry, wallMaterial);
@@ -291,7 +309,7 @@ world.addBody(grassMatBody);
 
 
 // Создание формы и тела для стены 1
-const wall1Shape = new CANNON.Box(new CANNON.Vec3(5, 1.5, 0.1));
+const wall1Shape = new CANNON.Box(new CANNON.Vec3(5, 4.5, 0.1));
 const wall1Body = new CANNON.Body({mass: 0});
 wall1Body.addShape(wall1Shape);
 wall1Body.position.set(wall1.position.x, wall1.position.y, wall1.position.z);
@@ -309,7 +327,7 @@ world.addBody(wall1Body);
     scene.add(wall2);
 
     // Создание формы и тела для стены 2
-const wall2Shape = new CANNON.Box(new CANNON.Vec3(5, 1.5, 0.1));
+const wall2Shape = new CANNON.Box(new CANNON.Vec3(5, 4.5, 0.1));
 const wall2Body = new CANNON.Body({mass: 0});
 wall2Body.addShape(wall2Shape);
 wall2Body.position.set(wall2.position.x, wall2.position.y, wall2.position.z);
@@ -324,7 +342,7 @@ world.addBody(wall2Body);
     scene.add(wall3);
     
 // Создание формы и тела для стены 3
-const wall3Shape = new CANNON.Box(new CANNON.Vec3(0.1, 1.5, 5));
+const wall3Shape = new CANNON.Box(new CANNON.Vec3(0.1, 4.5, 5));
 const wall3Body = new CANNON.Body({mass: 0});
 wall3Body.addShape(wall3Shape);
 wall3Body.position.set(wall3.position.x, wall3.position.y, wall3.position.z);
@@ -352,40 +370,68 @@ world.addBody(wall3Body);
 
     // скайбокс небо 
     const skyBoxGeometry = new THREE.SphereGeometry(900, 120, 110);
-const skyBoxMaterial = new THREE.MeshBasicMaterial({map: sky, side: THREE.BackSide});
-const skyBox = new THREE.Mesh(skyBoxGeometry, skyBoxMaterial);
-scene.add(skyBox);
+    const skyBoxMaterial = new THREE.MeshBasicMaterial({map: sky, side: THREE.BackSide});
+    const skyBox = new THREE.Mesh(skyBoxGeometry, skyBoxMaterial);
+    scene.add(skyBox);
 
 
 
-
-
-    // Создание столбика
-    const pillarGeometry = new THREE.BoxGeometry(0.2, 3, 0.2);
-    const pillarMaterial = new THREE.MeshPhongMaterial({color: 0x808080});
-    const pillar = new THREE.Mesh(pillarGeometry, pillarMaterial);
-    pillar.position.y = 1.5; // Установка позиции столбика по вертикали
-    pillar.castShadow = true; // Включение отбрасывания теней для столбика
-    pillar.receiveShadow = true; // Включение принятия теней для столбика
-    scene.add(pillar);
-
+pillar_prop(2, 1.5, 0);
+pillar_prop(3, 1.5, 0);
 
     
-    // коробка
-    const boxGeometry = new THREE.BoxGeometry(1, 0.5, 1);
-    const boxMaterial = new THREE.MeshPhongMaterial({map: boxTexture});
-    box = new THREE.Mesh(boxGeometry, boxMaterial);
-    box.position.set(-4, 0.25, -3.5);
-    box.castShadow = true;
-    box.receiveShadow = true;
-    scene.add(box);
+supply_box_prop(-4, 0.25, -3.5);
+supply_box_prop(-4.2, 0.55, -3.6);
+supply_box_prop(-4, 1.25, -3.7);
+supply_box_prop(-4.4, 2.15, -3.8);
+supply_box_prop(-4, 2.65, -3.5);
+supply_box_prop(-4.2, 3.15, -3.5);
+supply_box_prop(-4.1, 3.65, -3.5);
+supply_box_prop(-4.3, 4.15, -3.6);
+supply_box_prop(-4.4, 4.65, -3.7);
 
-    // Создание формы и тела для коробки
-    const boxShape = new CANNON.Box(new CANNON.Vec3(0.5, 0.25, 0.5));
-    boxBody = new CANNON.Body({mass: 1});
-    boxBody.addShape(boxShape);
-    boxBody.position.set(-1, 5.25, -2.5);
-    world.addBody(boxBody);
+
+
+
+
+football_prop(3, 0.25, -3.5)
+football_prop(3.4, 0.25, -3.5)
+football_prop(3.8, 0.25, -3.5)
+football_prop(6.2, 0.25, -5.9)
+
+football_prop(3, 0.25, -3.5)
+football_prop(3.4, 0.25, -3.5)
+football_prop(3.8, 0.25, -3.5)
+football_prop(6.2, 0.25, -5.9)
+football_prop(3, 0.25, -3.5)
+football_prop(3.4, 0.25, -3.5)
+football_prop(3.8, 0.25, -3.5)
+football_prop(6.2, 0.25, -5.9)
+football_prop(3, 0.25, -3.5)
+football_prop(3.4, 0.25, -3.5)
+football_prop(3.8, 0.25, -3.5)
+football_prop(6.2, 0.25, -5.9)
+football_prop(3, 0.25, -3.5)
+football_prop(3.4, 0.25, -3.5)
+football_prop(3.8, 0.25, -3.5)
+football_prop(6.2, 0.25, -5.9)
+football_prop(3, 0.25, -3.5)
+football_prop(3.4, 0.25, -3.5)
+football_prop(3.8, 0.25, -3.5)
+football_prop(6.2, 0.25, -5.9)
+football_prop(3, 0.25, -3.5)
+football_prop(3.4, 0.25, -3.5)
+football_prop(3.8, 0.25, -3.5)
+football_prop(6.2, 0.25, -5.9)
+football_prop(3, 0.25, -3.5)
+football_prop(3.4, 0.25, -3.5)
+football_prop(3.8, 0.25, -3.5)
+football_prop(6.2, 0.25, -5.9)
+football_prop(3, 0.25, -3.5)
+football_prop(3.4, 0.25, -3.5)
+football_prop(3.8, 0.25, -3.5)
+football_prop(6.2, 0.25, -5.9)
+
 
 
     // Создание материала для спрайта ВЗРЫВ
@@ -393,38 +439,17 @@ scene.add(skyBox);
     // Создание спрайта ВЗРЫВ
     // Настройка материала для отображения только первого кадра спрайта
 
-explosionMaterial.map.offset.x = 0; // Установка смещения текстуры по горизонтали
-explosionMaterial.map.repeat.x = 1 / frameCount; // Установка повторения текстуры по горизонтали
-// Создание спрайта
-explosionSprite = new THREE.Sprite(explosionMaterial);
-explosionSprite.scale.set(2, 2, 1); // Установка размера спрайта
-explosionSprite.visible = false; // Скрытие спрайта
-scene.add(explosionSprite);
+    explosionMaterial.map.offset.x = 0; // Установка смещения текстуры по горизонтали
+    explosionMaterial.map.repeat.x = 1 / frameCount; // Установка повторения текстуры по горизонтали
+    // Создание спрайта
+    explosionSprite = new THREE.Sprite(explosionMaterial);
+    explosionSprite.scale.set(2, 2, 1); // Установка размера спрайта
+    explosionSprite.visible = false; // Скрытие спрайта
+    scene.add(explosionSprite);
 
 
 
 
-    // футбольный мяч 
-    // мяч
-    const footballGeometry = new THREE.SphereGeometry(0.25, 22, 22);
-    const footballMaterial = new THREE.MeshLambertMaterial({map: footballTexture});
-    football = new THREE.Mesh(footballGeometry, footballMaterial);
-    football.position.set(-4, 0.25, -3.5);
-    football.castShadow = true;
-    football.receiveShadow = true;
-    scene.add(football);
-
-    // Создание материала с высокой упругостью МЯЧ 
-    const bouncyMaterial = new CANNON.Material('bouncyMaterial');
-    bouncyMaterial.restitution = 0.98;
-    bouncyMaterial.friction = 2.5;
-    // Создание формы и тела для сферы
-    const sphereShape = new CANNON.Sphere(0.2);
-    sphereBody = new CANNON.Body({mass: 0.3});
-    sphereBody.addShape(sphereShape);
-    sphereBody.position.set(1, 5, -1);
-    sphereBody.material = bouncyMaterial; // Применение материала к телу сферы
-    world.addBody(sphereBody);
 
 
     // ГРАНАТА 
@@ -449,7 +474,7 @@ scene.add(explosionSprite);
 
     // физика гранаты
     const granadeGeometry = new CANNON.Box(new CANNON.Vec3(0.03, 0.1, 0.03)); // Создание формы цилиндра с радиусом верхнего и нижнего оснований 1, высотой 2 и 8 сегментами
-    granadeBody = new CANNON.Body({mass: 4}); // Создание тела с массой 1
+    granadeBody = new CANNON.Body({mass: 2}); // Создание тела с массой 1
     granadeBody.addShape(granadeGeometry); // Добавление формы к телу
     granadeBody.position.set(1, 3, 1); // Установка позиции тела
     world.addBody(granadeBody); // Добавление тела в физический мир
@@ -480,11 +505,6 @@ scene.add(explosionSprite);
     // бочка красная red barrel 
     modelLoader.load('models/red_barrel/half_life_inspired_explosive_barrel.glb', (gltf) => {
         const red_barrel = gltf.scene;
-    
-        // Загрузка текстуры
-        const textureLoader = new THREE.TextureLoader();
-        // const texture = textureLoader.load('models/red_barrel/half_life_inspired_explosive_barrel.png');
-    
         // Применение текстуры к материалу модели
         red_barrel.traverse(object => {
             if (object.isMesh) {
@@ -514,7 +534,7 @@ function animate() {
     // Обновление мира физики
     world.step(1/60);
     // Обновление визуализации физических тел
-    cannonDebugRenderer.update();
+    // cannonDebugRenderer.update();
 
 
 
@@ -525,10 +545,10 @@ function animate() {
     velocity.x -= velocity.x * 10.0 * delta;
     velocity.z -= velocity.z * 10.0 * delta;
    
-    if (moveForward) velocity.z -= 10.0 * delta * (moveFast ? 5 : 1);
-    if (moveBackward) velocity.z += 10.0 * delta * (moveFast ? 5 : 1);
-    if (moveLeft) velocity.x -= 10.0 * delta * (moveFast ? 5 : 1);
-    if (moveRight) velocity.x += 10.0 * delta * (moveFast ? 5 : 1);
+    if (moveForward) velocity.z -= 10.0 * delta * (moveFast ? 7 : 4);
+    if (moveBackward) velocity.z += 10.0 * delta * (moveFast ? 7 : 4);
+    if (moveLeft) velocity.x -= 10.0 * delta * (moveFast ? 7 : 4);
+    if (moveRight) velocity.x += 10.0 * delta * (moveFast ? 7 : 4);
    
     controls.moveRight(-velocity.x * delta);
     controls.moveForward(-velocity.z * delta);
@@ -547,14 +567,27 @@ function animate() {
     prevTime = time;
    
     // Обновление позиции и ориентации визуальной коробки
-    box.position.copy(boxBody.position);
-    box.quaternion.copy(boxBody.quaternion);
+if (supply_boxes) {
+    // console.log(supply_boxesBodys)
+    supply_boxes.forEach((el, index) => {
+        el.position.copy(supply_boxesBodys[index].position);
+        el.quaternion.copy(supply_boxesBodys[index].quaternion);
+    });
+
+}
+
     //     // Обновление позиции и ориентации визуальной камеры
     // camera.position.copy(cameraBody.position);
     // camera.quaternion.copy(cameraBody.quaternion);
 
 
     // Обновление позиции и ориентации визуального мяча
+if (footballs) {
+    footballs.forEach((el, index) => {
+        el.position.copy(footballsBodys[index].position);
+        el.quaternion.copy(footballsBodys[index].quaternion);
+    });
+}
   football.position.copy(sphereBody.position);
   football.quaternion.copy(sphereBody.quaternion);
 
