@@ -1,6 +1,10 @@
 let currentFrame = 0; // Текущий кадр спрайта
 
+
+
+
 function explode(position) {
+  
     // Показать спрайт взрыва
     explosionSprite.visible = true;
     explosionSprite.scale.set(5, 5, 1); // Установка размера спрайта
