@@ -1,6 +1,7 @@
 function supply_box_prop(x, y, z) {
     const loader = new THREE.TextureLoader();
     const boxTexture = loader.load('img/box.png');
+    var normalMap = THREE.ImageUtils.loadTexture ('./img/supply_normal.png');
     // коробка
     const boxGeometry = new THREE.BoxGeometry(1, 0.5, 1);
     const boxMaterial = new THREE.MeshPhongMaterial({map: boxTexture});

@@ -5,14 +5,19 @@ function redBarrel_prop(x, y, z) {
     modelLoader.load('models/red_barrel/half_life_inspired_explosive_barrel.glb', (gltf) => {
         red_barrel = gltf.scene;
         // Применение текстуры к материалу модели
-        red_barrel.traverse(object => {
-            if (object.isMesh) {
-                object.material.emissive.set(0x111111);
-            }
-        });
+        // red_barrel.traverse(object => {
+        //     if (object.isMesh) {
+        //         object.material.emissive.set(0x111111);
+        //     }
+        // });
         // Изменение позиции и масштаба модели
         red_barrel.position.set(-2, 0.8, -1.3);
         red_barrel.scale.set(0.02, 0.02, 0.02);
+            // Установка свойств castShadow и receiveShadow для всех дочерних объектов
+    red_barrel.traverse((child) => {
+        child.castShadow = true;
+        // child.receiveShadow = true;
+    });
         // red_barrel.rotateY(143)
         const angle = THREE.MathUtils.degToRad(145); // Угол поворота в радианах
         red_barrel.rotateX(angle); // Поворот модели бочки вокруг оси Y на 45 градусов
