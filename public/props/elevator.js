@@ -18,9 +18,9 @@ function elevator(x, y, z) {
       gltf.animations.forEach((animation) => {
         const animationAction = mixer.clipAction(animation);
         animationAction.play();
-        // setTimeout(() => {
-        //   animationAction.paused = true;
-        // }, 1200);
+        setTimeout(() => {
+          animationAction.paused = true;
+        }, 1000);
       });
     });
   
@@ -29,12 +29,27 @@ function elevator(x, y, z) {
   // Создание AnimationMixer и добавление анимаций из gltf.animations
 
 
-    
-    // Создание формы и тела для цилиндра
-    const cylinderShape = new CANNON.Cylinder(0.4, 0.4, 1.3, 18); // Создание формы цилиндра с радиусом верхнего и нижнего оснований 1, высотой 2 и 32 сегментами
-    cylinderBody = new CANNON.Body({mass: 1}); // Создание тела с массой 1
-    cylinderBody.addShape(cylinderShape); // Добавление формы к телу
-    cylinderBody.position.set(1, 1, 1); // Установка позиции тела на позицию визуального объекта
-    world.addBody(cylinderBody); // Добавление тела в физический мир
+        // Создание материала для стенок лифта с упругостью
+        const wallMaterial = new CANNON.Material();
+        wallMaterial.restitution = 0.1;
+        wallMaterial.friction = 2.5;
+
+        // Создание форм для стенок лифта
+        const wallShape = new CANNON.Box(new CANNON.Vec3(1, 1.5, 0.1));
+        const wallShape2 = new CANNON.Box(new CANNON.Vec3(0.1, 1.5, 1));
+        const ceilingShape = new CANNON.Box(new CANNON.Vec3(1, 0.1, 1));
+        const floorShape = new CANNON.Box(new CANNON.Vec3(1, 0.1, 1));
+
+        // Создание составного тела для лифта
+        elevatorBody = new CANNON.Body({mass: 0});
+        elevatorBody.addShape(wallShape, new CANNON.Vec3(0, 1.5, -1));
+        elevatorBody.addShape(wallShape, new CANNON.Vec3(0, 1.5, 1));
+        elevatorBody.addShape(wallShape2, new CANNON.Vec3(-1, 1.5, 0));
+        elevatorBody.addShape(ceilingShape, new CANNON.Vec3(0, 3, 0));
+        elevatorBody.addShape(floorShape);
+        elevatorBody.material = wallMaterial;
+        elevatorBody.fixedRotation = false; // Разрешение вращения тела
+        elevatorBody.position.set(x,y,z)
+        world.addBody(elevatorBody);
 }
      

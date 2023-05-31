@@ -46,6 +46,7 @@ const particleBodies = [];
 let carriedObject = null; // Ссылка на поднимаемый объект
 let carryDistance = 0; // Расстояние от камеры до объекта
 
+let elevatorBody;
 
 let cylinderBodys = []
 let red_barrels = []
@@ -65,6 +66,9 @@ let particleSystem;
 
 
 
+// function checkTriggers() {
+//     console.log('ses')
+// };
 
 
 function init() {
@@ -241,9 +245,9 @@ function init() {
             // Создание взрыва в точке пересечения
             explode(position);
             createExplosion(position);
-            let normal = getSurfaceNormal(position.x, position.y, position.z);
 
-            addExplosionMark(position, normal)
+
+
             
             // console.log(position)
           }
@@ -416,11 +420,6 @@ scene.traverse(object => {
 
 
 
-
-
-
-
-
 //projector
 // прожектор 
 var proj = new THREE.SpotLight(0xffff00, 6, 50, Math.PI / 12, 145);
@@ -475,6 +474,7 @@ world.addBody(grassMatBody);
     wall_build_prop(-5, 2, -5, 2);
     wall_build_prop(-1, -2, -5, 2);
     wall_build_prop(-5, -2, -5, 2);
+    trigger(-5, -4.1, -3);
     
     wall_build_prop(-7, 2, -3, 1);
     // wall_build_prop(-7, 2, -3, 1);
@@ -489,8 +489,8 @@ world.addBody(grassMatBody);
     wall_build_prop(-1, -2, -1, 2);
     wall_build_prop(-5, -2, -1, 2);
 
-    bunker_door(4.9,0.1,1.3)
-    wall_build_prop(5, 2, -3, 1);
+    // bunker_door(4.9,0.1,1.3)
+    // wall_build_prop(5, 2, -3, 1);
 
     step(1, -0.19, -3);
     step(0.6, -0.4, -3)
@@ -513,6 +513,7 @@ world.addBody(grassMatBody);
     const skyBoxMaterial = new THREE.MeshBasicMaterial({map: sky, side: THREE.BackSide});
     const skyBox = new THREE.Mesh(skyBoxGeometry, skyBoxMaterial);
     scene.add(skyBox);
+
 
 
 
@@ -574,26 +575,6 @@ redBarrel_prop(4, 3.25, -3.5)
 
 
 
-// addExplosionMark({x:4, y:0.25, z:-3.5})
-
-// function addExplosionMark(position) {
-//     // Выбор случайного изображения
-//     const index = Math.floor(Math.random() * 15) + 1;
-//     const filename = `img/burnMarks/explosion_mark_${index}.png`;
-//     // Загрузка текстуры
-//     const textureLoader = new THREE.TextureLoader();
-//     const texture = textureLoader.load(filename);
-//     // Создание материала с текстурой
-//     const material = new THREE.MeshBasicMaterial({map: texture, transparent: true});
-//     // Создание плоскости
-//     const geometry = new THREE.PlaneGeometry(1, 1);
-//     const mesh = new THREE.Mesh(geometry, material);
-//     // Установка позиции плоскости
-//     mesh.position.set(position.x, position.y, position.z);
-
-//     // Добавление плоскости в сцену
-//     scene.add(mesh);
-// }
 
 
 
@@ -620,68 +601,6 @@ redBarrel_prop(4, 3.25, -3.5)
 
 
 
-
-
-function addExplosionMark(position, normal) {
-    // Выбор случайного изображения
-    const index = Math.floor(Math.random() * 15) + 1;
-    const filename = `img/burnMarks/explosion_mark_${index}.png`;
-    // Загрузка текстуры
-    const textureLoader = new THREE.TextureLoader();
-    const texture = textureLoader.load(filename);
-    // Создание материала с текстурой
-    const material = new THREE.MeshBasicMaterial({map: texture, transparent: true});
-// Создание плоскости
-const geometry = new THREE.PlaneGeometry(1, 1);
-const mesh = new THREE.Mesh(geometry, material);
-// Установка позиции плоскости
-mesh.position.set(position.x, position.y, position.z);
-// Вычисление вектора, который перпендикулярен нормали и лежит в плоскости поверхности
-const upVector = new THREE.Vector3(0, 1, 0);
-const tangent = upVector.clone().cross(normal).normalize();
-// Поворот плоскости таким образом, чтобы она была параллельна поверхности
-mesh.lookAt(tangent);
-// Добавление плоскости в сцену
-scene.add(mesh);
-}
-
-
-
-function getSurfaceNormal(x, y, z) {
-    const directions = [
-        new THREE.Vector3(1, 0, 0),
-        new THREE.Vector3(-1, 0, 0),
-        new THREE.Vector3(0, 1, 0),
-        new THREE.Vector3(0, -1, 0),
-        new THREE.Vector3(0, 0, 1),
-        new THREE.Vector3(0, 0, -1)
-    ];
-
-    const raycaster = new THREE.Raycaster();
-    raycaster.camera = camera;
-    const explosionPosition = new THREE.Vector3(x, y, z);
-
-    for (const direction of directions) {
-        raycaster.set(explosionPosition, direction);
-
-        const intersects = raycaster.intersectObjects(scene.children);
-
-        if (intersects.length > 0) {
-            console.log(intersects[0].face.normal)
-            return intersects[0].face.normal;
-        }
-    }
-
-    // Не найдено пересечений
-    return null;
-}
-
-
-
-
-
-
-
     // Создание материала для спрайта ВЗРЫВ
     explosionMaterial = new THREE.SpriteMaterial({map: explosionTexture});
     // Создание спрайта ВЗРЫВ
@@ -696,26 +615,6 @@ function getSurfaceNormal(x, y, z) {
     scene.add(explosionSprite);
 
 
-    // serving room
-
-    // modelLoader.load('models/serving_room/the_serving_room.glb', (gltf) => {
-    //     re = gltf.scene;
-    
-    //     // // Загрузка текстуры
-    //     // const textureLoader = new THREE.TextureLoader();
-    //     // const texture = textureLoader.load('models/granade/textures/granata-color24k_1.png');
-    
-    //     // Применение текстуры к материалу модели
-    //     // grenade.traverse((child) => {
-    //     // if (child.isMesh) {
-    //     // child.material.map = texture;
-    //     // }
-    //     // });
-    //     // Изменение позиции и масштаба модели
-    //     re.position.set(12, 1, 12);
-    //     // re.scale.set(12, 1, 12);
-    //     scene.add(re);
-    // });
 
 
     
@@ -831,14 +730,14 @@ function getSurfaceNormal(x, y, z) {
     modelLoader.load('models/bunker_light/bunker_light.glb', (gltf) => {
         const walllight = gltf.scene;
         // 0x8B0000
-        const bulbLight = new THREE.PointLight(0xf6f3d3, 1.8, 10);
-        bulbLight.position.set(-6, -3, -4.4); // Установите позицию лампочки
+        const bulbLight = new THREE.PointLight(0xf6f3d3, 1.2, 10);
+        bulbLight.position.set(-6, -3, -4.5); // Установите позицию лампочки
         bulbLight.castShadow = true;
         bulbLight.shadow.mapSize.set(210, 210);
         scene.add(bulbLight);// Изменение позиции и масштаба модели
 
-
         walllight.position.set(-6, -3, -4.8);
+        // walllight.position.set(-6, -3, -4.8);
         walllight.scale.set(0.006, 0.006, 0.006);
         walllight.rotateX(90 * Math.PI / 180);
 
@@ -847,9 +746,33 @@ function getSurfaceNormal(x, y, z) {
 
 
 
+    // Определение триггера для опускания лифта
+// const trigger = true;
 
-        
- 
+// Определение функции для опускания лифта
+function lowerElevator() {
+  // Проверка триггера
+//   if (trigger) {
+    // Определение интервала для опускания лифта
+    const interval = setInterval(() => {
+      // Изменение позиции тела лифта
+      elevatorBody.position.y -= 0.02;
+      
+      // Остановка опускания лифта после достижения нужного расстояния
+      if (elevatorBody.position.y <= -25) {
+        clearInterval(interval);
+      }
+    }, 10);
+//   }
+}
+
+// Вызов функции для опускания лифта
+setTimeout(() => {
+    lowerElevator();
+}, 4000);
+
+
+
     // // wall light
     // modelLoader.load('models/wall_light/scifi_light_04.glb', (gltf) => {
     //     const walllight = gltf.scene;
@@ -874,6 +797,7 @@ function getSurfaceNormal(x, y, z) {
         const walllight = gltf.scene;
         // 0x8B0000
         const bulbLight = new THREE.PointLight(0x8B0000, 1.3, 12);
+        // bulbLight.position.set(4.4, 3, -3); // Установите позицию лампочки
         bulbLight.position.set(4.4, 3, -3); // Установите позицию лампочки
         bulbLight.castShadow = true;
         bulbLight.shadow.mapSize.set(210, 210);
@@ -901,6 +825,8 @@ function getSurfaceNormal(x, y, z) {
 
 
 
+
+
 //     // Обработка движения мыши
 // controls.addEventListener('change', () => {
 //     // Получение направления взгляда камеры
@@ -920,6 +846,25 @@ function getSurfaceNormal(x, y, z) {
     
 
 
+
+
+
+// world.addEventListener('beginContact', function(event) {
+//     console.log('contact')
+//     // Получение тел, участвующих в контакте
+//     var bodyA = event.bodyA;
+//     var bodyB = event.bodyB;
+
+//     // Проверка, является ли одно из тел нашим боксом
+//     // if (bodyA === body || bodyB === body) {
+//     //     // Определение другого тела
+//     //     var otherBody = (bodyA === body) ? bodyB : bodyA;
+
+//     //     // Здесь вы можете добавить код для обработки пересечения с другим телом
+//     //     console.log('Box collided with', otherBody);
+//     // }
+// });
+
 }
 
 function animate() {
@@ -929,7 +874,9 @@ function animate() {
     // Обновление мира физики
     world.step(1/60);
     // Обновление визуализации физических тел
-    // cannonDebugRenderer.update();
+    cannonDebugRenderer.update();
+
+    // checkTriggers();
 
     // Обновление ориентации модели
     // modelBody.quaternion.copy(camera.quaternion);

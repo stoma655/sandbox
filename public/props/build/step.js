@@ -13,6 +13,7 @@ function step(x, y, z) {
     const stepMesh = new THREE.Mesh(stepGeometry, stepMaterial);
     
     // Установка позиции ступеньки
+    stepMesh.rotateZ(-90 * Math.PI / 180);
     stepMesh.position.set(x, y, z);
     scene.add(stepMesh)
     
